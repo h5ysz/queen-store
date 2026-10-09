@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { isAuthenticated } from '@/lib/auth'
 
-const ALLOWED_FIELDS = ['name', 'price', 'color', 'caption', 'image', 'sortOrder', 'isActive'] as const
+const ALLOWED_FIELDS = ['name', 'price', 'color', 'caption', 'image', 'category', 'stock', 'sortOrder', 'isActive'] as const
 
 const MAX_LENGTHS: Record<string, number> = {
   name: 200,
@@ -11,6 +11,7 @@ const MAX_LENGTHS: Record<string, number> = {
   color: 50,
   caption: 2000,
   image: 2000,
+  category: 100,
 }
 
 type ProductData = Record<string, string | number | boolean>
@@ -42,6 +43,20 @@ function validateBody(body: unknown): ValidationResult {
             : NaN
       if (!Number.isInteger(num) || num < 0) return { error: 'ترتيب العرض غير صحيح' }
       data.sortOrder = num
+    } else if (key === 'stock') {
+      const num =
+        typeof value === 'number'
+          ? value
+          : typeof value === 'string' && value.trim() !== ''
+            ? Number(value)
+            : NaN
+      if (!Number.isInteger(num) || num < 0) return { error: 'قيمة المخزون غير صحيحة' }
+      data.stock = num
+    } else if (key === 'category') {
+      if (typeof value !== 'string') return { error: 'قيمة التصنيف غير صحيحة' }
+      const trimmed = value.trim()
+      if (trimmed.length > MAX_LENGTHS.category) return { error: 'اسم التصنيف أطول من الحد المسموح' }
+      data.category = trimmed
     } else if (key === 'name') {
       if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
       const trimmed = value.trim()

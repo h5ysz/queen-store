@@ -78,14 +78,15 @@ export async function POST(req: NextRequest) {
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN
 
     if (!blobToken) {
-      return NextResponse.json(
-        {
-          error: 'الرجاء إضافة BLOB_READ_WRITE_TOKEN في Environment Variables',
-          note: 'لم يتم رفع الصور حاليًا. أضف Vercel Blob Token من إعدادات مشروع Vercel لتشغيل رفع الصور.',
-          fallback: 'يمكنك بدلًا من ذلك استخدام مسار صورة موجودة (مثل /img-XX.jpg أو رابط مباشر) عند تعديل المنتج.',
-        },
-        { status: 501 }
-      )
+      const FALLBACK_MAX = 3 * 1024 * 1024
+      if (file.size > FALLBACK_MAX) {
+        return NextResponse.json(
+          { error: 'حجم الصورة كبير جدًا للرفع المباشر (الحد 3 ميجابايت)' },
+          { status: 413 }
+        )
+      }
+      const base64 = Buffer.from(bytes).toString('base64')
+      return NextResponse.json({ url: `data:${detected};base64,${base64}` })
     }
 
     try {

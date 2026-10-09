@@ -18,14 +18,26 @@ export async function POST(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
     const body = await req.json()
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    if (!name) return NextResponse.json({ error: 'اسم المنتج مطلوب' }, { status: 400 })
+    if (name.length > 200) return NextResponse.json({ error: 'اسم المنتج أطول من الحد المسموح' }, { status: 400 })
+
+    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '')
+    const toNonNegInt = (v: unknown) => {
+      const n = typeof v === 'number' ? v : Number(v)
+      return Number.isInteger(n) && n >= 0 ? n : 0
+    }
+
     const product = await db.product.create({
       data: {
-        name: body.name || '',
-        price: body.price || '0',
-        color: body.color || '',
-        caption: body.caption || '',
-        image: body.image || '',
-        sortOrder: Number(body.sortOrder) || 0,
+        name,
+        price: str(body.price, 50),
+        color: str(body.color, 50),
+        caption: str(body.caption, 2000),
+        image: str(body.image, 2000),
+        category: str(body.category, 100).trim(),
+        stock: toNonNegInt(body.stock),
+        sortOrder: toNonNegInt(body.sortOrder),
         isActive: body.isActive !== false,
       },
     })

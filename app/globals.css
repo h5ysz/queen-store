@@ -101,6 +101,26 @@ img {
   color: var(--gold);
 }
 
+.store .tools .admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--txt);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.store .tools .admin-link:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 .store .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

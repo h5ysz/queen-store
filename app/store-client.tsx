@@ -86,6 +86,7 @@ export default function StoreClient({ products }: { products: StoreProduct[] }) 
             onChange={(e) => setQuery(e.target.value)}
           />
           <button type="button" onClick={downloadCaptions}>📋 الكابشنات</button>
+          <a className="admin-link" href="/admin" title="لوحة الإدارة">⚙️ لوحة الإدارة</a>
         </div>
       </header>
 
