@@ -1,0 +1,339 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: Cairo, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ===== Queen storefront (ported from the original index.html) ===== */
+.store {
+  --bg: #0e0e12;
+  --card: #17171f;
+  --card2: #1f1f2a;
+  --gold: #d4af37;
+  --txt: #f2f2f5;
+  --mut: #a0a0b0;
+  --line: #2a2a38;
+  font-family: 'Cairo', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+.store header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(14, 14, 18, .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 16px;
+}
+
+.store .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.store .logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--gold), #8a6d1f);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.store .brand h1 {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.store .brand p {
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.store .tools {
+  display: flex;
+  gap: 8px;
+}
+
+.store .tools input,
+.store .tools button {
+  font-family: inherit;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--txt);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.store .tools input {
+  flex: 1;
+  min-width: 0;
+}
+
+.store .tools button {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.store .tools button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.store .grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 14px 14px 20px;
+}
+
+@media (min-width: 700px) {
+  .store .grid {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 18px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .store .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.store .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: .2s;
+}
+
+.store .card:hover {
+  transform: translateY(-3px);
+  border-color: #3d3d50;
+}
+
+.store .ph {
+  position: relative;
+  aspect-ratio: 3/4;
+  background: var(--card2);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
+.store .ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.store .badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, .6);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.store .b-info {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.store .b-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.store .price-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.store .price-row .price {
+  width: 100%;
+  background: var(--card2);
+  color: var(--txt);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 9px;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+.store .price-row .currency {
+  font-size: 12px;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.store .btns {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.store .btns a,
+.store .btns button {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  background: var(--card2);
+  color: var(--txt);
+  font-family: inherit;
+}
+
+.store .btns .wa {
+  background: var(--gold);
+  color: #14140a;
+  border-color: var(--gold);
+}
+
+.store .btns .copy:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.store .bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(23, 23, 31, .96);
+  border-top: 1px solid var(--line);
+  display: flex;
+  padding: 10px 14px;
+  gap: 10px;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+}
+
+.store .bar a,
+.store .bar button {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--txt);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.store .bar .wa {
+  background: var(--gold);
+  color: #14140a;
+  border-color: var(--gold);
+}
+
+.store .lb {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .95);
+  display: none;
+  place-items: center;
+  z-index: 50;
+  padding: 12px;
+}
+
+.store .lb.on {
+  display: grid;
+}
+
+.store .lb .lb-inner {
+  text-align: center;
+}
+
+.store .lb img {
+  max-width: 100%;
+  max-height: 78vh;
+  border-radius: 12px;
+  margin: 0 auto;
+}
+
+.store .lb .cap {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--mut);
+  max-width: 520px;
+  text-align: center;
+  line-height: 1.9;
+}
+
+.store .lb button {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.store .toast {
+  position: fixed;
+  bottom: 78px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--gold);
+  color: #14140a;
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: .25s;
+  z-index: 60;
+}
+
+.store .toast.on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
