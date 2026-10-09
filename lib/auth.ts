@@ -1,6 +1,6 @@
 ﻿import { cookies } from 'next/headers'
-import bcrypt from 'bcryptjs'
 import { createHmac, timingSafeEqual } from 'crypto'
+import { verifyAdminPassword, getSessionFingerprint } from '@/lib/admin'
 
 const SESSION_COOKIE = 'queen_admin_session'
 
@@ -13,15 +13,7 @@ function getSessionSecret(): string {
 }
 
 export async function verifyPassword(password: string): Promise<boolean> {
-  const hash = process.env.ADMIN_PASSWORD_HASH
-  if (!hash || hash.length === 0) {
-    return false
-  }
-  try {
-    return await bcrypt.compare(password, hash)
-  } catch {
-    return false
-  }
+  return verifyAdminPassword(password)
 }
 
 function sign(data: string): string {
@@ -52,9 +44,12 @@ export async function isAuthenticated(): Promise<boolean> {
     }
 
     try {
-      const data = JSON.parse(payload) as { authenticated?: boolean; expires?: number }
+      const data = JSON.parse(payload) as { authenticated?: boolean; expires?: number; sv?: number; pv?: string }
       if (data.authenticated !== true) return false
       if (typeof data.expires === 'number' && Date.now() > data.expires) return false
+      if (typeof data.sv !== 'number' || typeof data.pv !== 'string') return false
+      const current = await getSessionFingerprint()
+      if (data.sv !== current.sv || data.pv !== current.pv) return false
     } catch {
       return false
     }
@@ -67,7 +62,8 @@ export async function isAuthenticated(): Promise<boolean> {
 export async function setSession() {
   const cookieStore = cookies()
   const expires = Date.now() + 7 * 24 * 60 * 60 * 1000
-  const payload = JSON.stringify({ authenticated: true, expires })
+  const { sv, pv } = await getSessionFingerprint()
+  const payload = JSON.stringify({ authenticated: true, expires, sv, pv })
   const sig = sign(payload)
   const value = Buffer.from(JSON.stringify({ payload, sig })).toString('base64')
   cookieStore.set(SESSION_COOKIE, value, {

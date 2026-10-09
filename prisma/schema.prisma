@@ -30,3 +30,34 @@ model Category {
   createdAt DateTime @default(now())
 }
 
+model AdminAccount {
+  id             String   @id @default("primary")
+  email          String
+  passwordHash   String?
+  sessionVersion Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  ip        String    @default("")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+model ResetRequest {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}
+

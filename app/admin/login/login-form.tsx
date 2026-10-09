@@ -50,7 +50,10 @@ export default function LoginForm() {
         <button type="submit" disabled={loading} style={{ width: '100%', marginTop: '18px', padding: '10px 12px', borderRadius: '8px', border: 'none', background: '#111', color: '#fff', fontFamily: 'Cairo, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif', fontSize: '14px', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'جاري الدخول...' : 'دخول لوحة التحكم'}
         </button>
-        <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#666' }}>
+        <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '13px' }}>
+          <a href="/admin/forgot" style={{ color: '#111', textDecoration: 'underline' }}>نسيت كلمة المرور؟</a>
+        </div>
+        <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '12px', color: '#666' }}>
           <a href="/" style={{ color: '#666', textDecoration: 'none' }}>العودة للمتجر</a>
         </div>
       </form>
