@@ -9,25 +9,61 @@ datasource db {
 }
 
 model Product {
-  id        String   @id @default(cuid())
-  name      String
-  price     String
-  color     String
-  caption   String   @db.Text
-  image     String   @db.Text
-  category  String   @default("")
-  stock     Int      @default(0)
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String        @id @default(cuid())
+  name               String
+  nameAr             String        @default("")
+  nameEn             String        @default("")
+  slug               String?
+  price              String
+  salePrice          String        @default("")
+  color              String        @default("")
+  caption            String        @db.Text
+  description        String        @db.Text @default("")
+  descriptionAr      String        @db.Text @default("")
+  descriptionEn      String        @db.Text @default("")
+  image              String        @db.Text
+  images             Json          @default("[]")
+  category           String        @default("")
+  categoryId         String?
+  categoryRelation   Category?     @relation(fields: [categoryId], references: [id])
+  stock              Int           @default(0)
+  sortOrder          Int           @default(0)
+  isActive           Boolean       @default(true)
+  outOfStock         Boolean       @default(false)
+  tags               String        @default("")
+  metaTitle          String        @default("")
+  metaDescription    String        @default("")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  options            ProductOption[]
+  variants           ProductVariant[]
+
+  @@index([categoryId, sortOrder])
+  @@index([slug])
 }
 
 model Category {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id          String     @id @default(cuid())
+  name        String
+  nameAr      String     @default("")
+  nameEn      String     @default("")
+  description String     @default("")
+  descriptionAr String    @default("")
+  descriptionEn String    @default("")
+  slug        String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  children    Category[] @relation("CategoryHierarchy")
+  image       String     @default("")
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  products    Product[]
+
+  @@index([parentId, sortOrder])
+  @@unique([name])
+  @@index([slug])
 }
 
 model AdminAccount {
@@ -61,3 +97,33 @@ model ResetRequest {
   @@index([ip, createdAt])
 }
 
+
+model ProductOption {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  nameAr    String   @default("")
+  values    Json     @default("[]")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId, sortOrder])
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String?
+  price     String   @default("")
+  salePrice String   @default("")
+  stock     Int      @default(0)
+  options   Json     @default("{}")
+  image     String   @default("")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
