@@ -37,17 +37,24 @@ export async function isAuthenticated(): Promise<boolean> {
   try {
     const raw = Buffer.from(session.value, 'base64').toString('utf8')
     const parsed = JSON.parse(raw)
-    if (!parsed.authenticated) return false
-    if (parsed.expires && Date.now() > parsed.expires) return false
     const payload = parsed.payload as string | undefined
     const sig = parsed.sig as string | undefined
     if (!payload || !sig) return false
+
     const expected = sign(payload)
     try {
       const bufA = Buffer.from(expected, 'hex')
       const bufB = Buffer.from(sig, 'hex')
       if (bufA.length !== bufB.length) return false
       if (!timingSafeEqual(bufA, bufB)) return false
+    } catch {
+      return false
+    }
+
+    try {
+      const data = JSON.parse(payload) as { authenticated?: boolean; expires?: number }
+      if (data.authenticated !== true) return false
+      if (typeof data.expires === 'number' && Date.now() > data.expires) return false
     } catch {
       return false
     }
