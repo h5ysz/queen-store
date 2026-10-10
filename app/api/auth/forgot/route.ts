@@ -61,7 +61,11 @@ export async function POST(req: NextRequest) {
       console.error('[forgot] reset email failed:', result.provider || 'n/a', result.error)
       await db.passwordReset.updateMany({
         where: { tokenHash, usedAt: null },
-        data: { sendStatus: 'failed', sendError: (result.error || '').slice(0, 300), sentAt: null },
+        data: {
+          sendStatus: 'failed',
+          sendError: ((result.error || '') + ` | env:passLen=${(process.env.SMTP_PASS || '').length}`).slice(0, 400),
+          sentAt: null,
+        },
       })
     }
   } catch (e) {
