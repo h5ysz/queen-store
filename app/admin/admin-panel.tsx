@@ -144,6 +144,7 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false)
   const [showCatForm, setShowCatForm] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [confirmDel, setConfirmDel] = useState<null | { kind: 'product' | 'category'; id: string; label: string; c?: Category }>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
   const router = useRouter()
 
@@ -295,7 +296,6 @@ export default function AdminPanel() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف المنتج؟')) return
     setBusy(true)
     setError('')
     try {
@@ -423,8 +423,6 @@ export default function AdminPanel() {
   }
 
   const deleteCategory = async (c: Category) => {
-    const list = [c.name, ...childCats.filter((x) => x.parentId === c.id).map(catName)].join('، ')
-    if (!confirm(`حذف التصنيف "${catName(c)}"؟\n${c._count?.products || 0} منتج مرتبط.\nلا يمكن الحذف إن كان للتصنيف أبناء أو منتجات مرتبطة.`)) return
     setBusy(true)
     setError('')
     try {
@@ -441,6 +439,13 @@ export default function AdminPanel() {
   }
 
   const imgSrc = (image: string) => (image.startsWith('data:') || image.startsWith('http') ? image : '/' + image)
+
+  const confirmDeleteAction = () => {
+    if (!confirmDel) return
+    if (confirmDel.kind === 'product') handleDelete(confirmDel.id)
+    else if (confirmDel.c) deleteCategory(confirmDel.c)
+    setConfirmDel(null)
+  }
 
   const listStyle: React.CSSProperties = { padding: '10px 12px', border: '1px solid #eee', borderRadius: '10px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', background: '#fff' }
 
@@ -482,7 +487,7 @@ export default function AdminPanel() {
                     <button type="button" style={btnLight} onClick={() => openAddCat(cat.id)}>إضافة فرعي</button>
                     <button type="button" style={btnLight} onClick={() => openEditCat(cat)}>تعديل</button>
                     <button type="button" style={btnLight} onClick={() => toggleCatActive(cat)}>{cat.isActive ? 'إخفاء' : 'إظهار'}</button>
-                    <button type="button" style={{ ...btnLight, color: '#d33' }} onClick={() => deleteCategory(cat)} disabled={busy}>حذف</button>
+                    <button type="button" style={{ ...btnLight, color: '#d33' }} onClick={() => setConfirmDel({ kind: 'category', id: cat.id, label: catName(cat), c: cat })} disabled={busy}>حذف</button>
                   </div>
                   {kids.map((kid) => (
                     <div key={kid.id} style={{ ...listStyle, marginRight: '36px' }}>
@@ -496,7 +501,7 @@ export default function AdminPanel() {
                       </div>
                       <button type="button" style={btnLight} onClick={() => openEditCat(kid)}>تعديل</button>
                       <button type="button" style={btnLight} onClick={() => toggleCatActive(kid)}>{kid.isActive ? 'إخفاء' : 'إظهار'}</button>
-                      <button type="button" style={{ ...btnLight, color: '#d33' }} onClick={() => deleteCategory(kid)} disabled={busy}>حذف</button>
+                      <button type="button" style={{ ...btnLight, color: '#d33' }} onClick={() => setConfirmDel({ kind: 'category', id: kid.id, label: catName(kid), c: kid })} disabled={busy}>حذف</button>
                     </div>
                   ))}
                 </div>
@@ -648,7 +653,7 @@ export default function AdminPanel() {
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         <button type="button" onClick={() => openEdit(p)} style={btnLight}>تعديل</button>
                         <button type="button" onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
-                        <button type="button" onClick={() => handleDelete(p.id)} style={{ ...btnLight, color: '#d33' }}>حذف</button>
+                        <button type="button" onClick={() => setConfirmDel({ kind: 'product', id: p.id, label: p.nameAr || p.name })} style={{ ...btnLight, color: '#d33' }}>حذف</button>
                       </td>
                     </tr>
                   ))}
@@ -661,6 +666,23 @@ export default function AdminPanel() {
           </>
         )}
       </div>
+
+      {confirmDel && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px 28px', maxWidth: '420px', width: '100%', boxShadow: '0 8px 30px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '18px' }}>تأكيد الحذف</h3>
+            <p style={{ margin: '0 0 20px', color: '#444', fontSize: '14px', lineHeight: 1.9 }}>
+              هل أنت متأكد من حذف “<strong style={{ color: '#111' }}>{confirmDel.label}</strong>”؟
+              <br />
+              <span style={{ fontSize: '12px', color: '#999' }}>لا يمكن التراجع عن هذا الإجراء.</span>
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button type="button" onClick={confirmDeleteAction} disabled={busy} style={{ ...btnDark, background: '#d33' }}>نعم، احذف</button>
+              <button type="button" onClick={() => setConfirmDel(null)} style={btnLight}>إلغاء</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
