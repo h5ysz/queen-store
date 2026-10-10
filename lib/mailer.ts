@@ -98,10 +98,12 @@ export async function sendPasswordResetEmail(to: string, link: string): Promise<
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     try {
       const port = Number(process.env.SMTP_PORT || 465)
+      const secureEnv = process.env.SMTP_SECURE
+      const secure = secureEnv !== undefined && secureEnv !== '' ? secureEnv === 'true' : port === 465
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port,
-        secure: port === 465,
+        secure,
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       })
       await transporter.sendMail({ from, to, subject, html, text })
