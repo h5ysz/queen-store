@@ -1,11 +1,11 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { isAuthenticated } from '@/lib/auth'
 
 const ALLOWED_FIELDS = ['name', 'price', 'color', 'caption', 'image', 'category', 'stock', 'sortOrder', 'isActive'] as const
 
-const MAX_LENGTHS: Record<string, number> = {
+const MAX_LENGTHS: Record<string, number> = { name:200,nameAr:200,nameEn:200,slug:200,salePrice:50,description:4000,descriptionAr:4000,descriptionEn:4000,images:2000,categoryId:100,tags:500,metaTitle:150,metaDescription:300,
   name: 200,
   price: 50,
   color: 50,
