@@ -286,7 +286,8 @@ export default function AdminPanel() {
     setError('')
     try {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('فشل حذف المنتج')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(errMsg(res.status, data, 'فشل حذف المنتج'))
       setSuccess('تم حذف المنتج')
       await reloadAll()
     } catch (e: any) {
@@ -350,7 +351,8 @@ export default function AdminPanel() {
           image: inline.image,
         }),
       })
-      if (!res.ok) throw new Error('فشل حفظ التعديل')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(errMsg(res.status, data, 'فشل حفظ التعديل'))
       setEditingId(null)
       setSuccess('تم حفظ التعديل')
       await reloadAll()
@@ -396,9 +398,9 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error('فشل نسخ المنتج')
-      const dupId = data.id
+      const data2 = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(errMsg(res.status, data2, 'فشل نسخ المنتج'))
+      const dupId = data2.id
       setSuccess('تم نسخ المنتج — غيّر الاسم وعدّل من الصف مباشرة')
       await reloadAll()
       if (dupId) {
@@ -424,7 +426,8 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !p.isActive }),
       })
-      if (!res.ok) throw new Error('فشل تحديث حالة المنتج')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(errMsg(res.status, data, 'فشل تحديث حالة المنتج'))
       await reloadAll()
     } catch (e: any) {
       setError(e.message)
@@ -442,7 +445,8 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !c.isActive }),
       })
-      if (!res.ok) throw new Error('فشل تحديث حالة التصنيف')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(errMsg(res.status, data, 'فشل تحديث حالة التصنيف'))
       await reloadAll()
     } catch (e: any) {
       setError(e.message)
@@ -533,7 +537,7 @@ export default function AdminPanel() {
     try {
       const res = await fetch(`/api/categories/${c.id}`, { method: 'DELETE' })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'فشل حذف التصنيف')
+      if (!res.ok) throw new Error(errMsg(res.status, data, 'فشل حذف التصنيف'))
       setSuccess('تم حذف التصنيف')
       await reloadAll()
     } catch (e: any) {
@@ -542,6 +546,9 @@ export default function AdminPanel() {
       setBusy(false)
     }
   }
+
+  const errMsg = (status: number, data: any, fallback: string) =>
+    status === 401 ? 'انتهت الجلسة — سجّل الدخول مرة أخرى' : data && data.error ? data.error : fallback
 
   const imgSrc = (image: string) => (image.startsWith('data:') || image.startsWith('http') ? image : '/' + image)
 
