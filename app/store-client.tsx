@@ -32,7 +32,6 @@ export type StoreCategory = {
 
 const SHOP = {
   name: 'Queen',
-  tagline: 'شنط بجودة عالية — توصيل لجميع المناطق',
   phone: '505897949',
   currency: 'ر.س',
 }
@@ -167,7 +166,6 @@ export default function StoreClient({
           <div className="logo">👜</div>
           <div>
             <h1>{SHOP.name}</h1>
-            <p>{SHOP.tagline}</p>
           </div>
         </div>
         <div className="tools">
