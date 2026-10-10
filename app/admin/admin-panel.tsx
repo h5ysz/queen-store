@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Product {
@@ -144,6 +144,7 @@ export default function AdminPanel() {
   const [showForm, setShowForm] = useState(false)
   const [showCatForm, setShowCatForm] = useState(false)
   const [busy, setBusy] = useState(false)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const router = useRouter()
 
   const loadProducts = async () => {
@@ -196,6 +197,7 @@ export default function AdminPanel() {
     setShowForm(true)
     setError('')
     setSuccess('')
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
   const openEdit = (p: Product) => {
@@ -213,6 +215,7 @@ export default function AdminPanel() {
     setShowForm(true)
     setError('')
     setSuccess('')
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
   }
 
   const handleUploadMultiple = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -538,7 +541,7 @@ export default function AdminPanel() {
         ) : (
           <>
             {showForm && (
-              <form onSubmit={handleSave} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
+              <form ref={formRef} onSubmit={handleSave} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: '18px' }}>{editing ? 'تعديل منتج' : 'إضافة منتج'}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                   <input placeholder="اسم المنتج (عربي) *" value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} style={inputStyle} />
@@ -643,9 +646,9 @@ export default function AdminPanel() {
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{p.isActive ? 'نشط' : 'مخفي'}</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{p.sortOrder}</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <button onClick={() => openEdit(p)} style={btnLight}>تعديل</button>
-                        <button onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
-                        <button onClick={() => handleDelete(p.id)} style={{ ...btnLight, color: '#d33' }}>حذف</button>
+                        <button type="button" onClick={() => openEdit(p)} style={btnLight}>تعديل</button>
+                        <button type="button" onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
+                        <button type="button" onClick={() => handleDelete(p.id)} style={{ ...btnLight, color: '#d33' }}>حذف</button>
                       </td>
                     </tr>
                   ))}
