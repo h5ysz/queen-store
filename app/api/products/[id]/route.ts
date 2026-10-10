@@ -16,6 +16,17 @@ const MAX_LENGTHS: Record<string, number> = {
   image: 2000, category: 100, categoryId: 100, tags: 500, metaTitle: 150, metaDescription: 300,
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  name: 'الاسم (افتراضي)', nameAr: 'الاسم (عربي)', nameEn: 'الاسم (إنجليزي)', slug: 'معرّف الرابط',
+  price: 'السعر', salePrice: 'سعر الخصم', color: 'اللون', caption: 'الوصف القصير',
+  description: 'الوصف', descriptionAr: 'الوصف (عربي)', descriptionEn: 'الوصف (إنجليزي)',
+  image: 'رابط الصورة', category: 'التصنيف', categoryId: 'التصنيف', tags: 'الوسوم',
+  metaTitle: 'عنوان SEO', metaDescription: 'وصف SEO',
+}
+
+const tooLong = (key: string) =>
+  `حقل «${FIELD_LABELS[key] || key}» أطول من الحد المسموح (${MAX_LENGTHS[key] ?? 2000} حرف)`
+
 type ProductData = Record<string, string | number | boolean | string[] | null>
 
 function validateBody(body: unknown): { data: ProductData } | { error: string } {
@@ -55,7 +66,7 @@ function validateBody(body: unknown): { data: ProductData } | { error: string } 
       if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
       const trimmed = value.trim()
       if (trimmed === '') return { error: 'اسم المنتج مطلوب' }
-      if (trimmed.length > MAX_LENGTHS.name) return { error: 'قيمة نصية أطول من الحد المسموح' }
+      if (trimmed.length > MAX_LENGTHS.name) return { error: tooLong('name') }
       data.name = trimmed
       continue
     }
@@ -68,7 +79,7 @@ function validateBody(body: unknown): { data: ProductData } | { error: string } 
 
     if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
     const max = MAX_LENGTHS[key] ?? 2000
-    if (value.length > max) return { error: 'قيمة نصية أطول من الحد المسموح' }
+    if (value.length > max) return { error: tooLong(key) }
     data[key] = key === 'price' || key === 'salePrice' || key === 'category' || key === 'color' || key === 'caption' ? value : value.trim()
   }
   return { data }

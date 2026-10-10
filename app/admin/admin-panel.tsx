@@ -329,6 +329,26 @@ export default function AdminPanel() {
   }
 
   const saveInlineEdit = async (id: string) => {
+    const limits: [keyof typeof inline, string, number][] = [
+      ['name', 'الاسم (افتراضي)', 200],
+      ['nameAr', 'الاسم (عربي)', 200],
+      ['nameEn', 'الاسم (إنجليزي)', 200],
+      ['color', 'اللون', 50],
+      ['price', 'السعر', 50],
+      ['salePrice', 'سعر الخصم', 50],
+      ['image', 'رابط الصورة', 2000],
+    ]
+    for (const [key, label, max] of limits) {
+      const v = inline[key]
+      if (typeof v === 'string' && v.length > max) {
+        setError(`حقل «${label}» أطول من الحد المسموح (${max} حرف)`)
+        return
+      }
+    }
+    if (!inline.name.trim()) {
+      setError('اسم المنتج مطلوب')
+      return
+    }
     setBusy(true)
     setError('')
     setSuccess('')
@@ -679,16 +699,16 @@ export default function AdminPanel() {
               <form ref={formRef} onSubmit={handleSave} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '20px' }}>
                 <h2 style={{ margin: '0 0 16px', fontSize: '18px' }}>{editing ? 'تعديل منتج' : 'إضافة منتج'}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                  <input placeholder="اسم المنتج (عربي) *" value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} style={inputStyle} />
-                  <input placeholder="اسم المنتج (افتراضي) *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
-                  <input placeholder="اسم المنتج (إنجليزي)" value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} style={inputStyle} />
-                  <input placeholder="معرّف الرابط (slug)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} style={inputStyle} />
+                  <input placeholder="اسم المنتج (عربي) *" maxLength={200} value={form.nameAr} onChange={(e) => setForm({ ...form, nameAr: e.target.value })} style={inputStyle} />
+                  <input placeholder="اسم المنتج (افتراضي) *" maxLength={200} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
+                  <input placeholder="اسم المنتج (إنجليزي)" maxLength={200} value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} style={inputStyle} />
+                  <input placeholder="معرّف الرابط (slug)" maxLength={200} value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} style={inputStyle} />
                   {!editing && (
-                    <input placeholder="معرّف المنتج (اختياري: أحرف/أرقام/_- فقط)" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value.trim() })} style={inputStyle} />
+                    <input placeholder="معرّف المنتج (اختياري: أحرف/أرقام/_- فقط)" maxLength={64} value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value.trim() })} style={inputStyle} />
                   )}
-                  <input placeholder="السعر *" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} style={inputStyle} />
-                  <input placeholder="سعر الخصم (اختياري)" value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })} style={inputStyle} />
-                  <input placeholder="اللون" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} style={inputStyle} />
+                  <input placeholder="السعر *" maxLength={50} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} style={inputStyle} />
+                  <input placeholder="سعر الخصم (اختياري)" maxLength={50} value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })} style={inputStyle} />
+                  <input placeholder="اللون" maxLength={50} value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} style={inputStyle} />
                   <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} style={inputStyle}>
                     <option value="">بدون تصنيف</option>
                     {mainCats.map((c) => (
@@ -708,15 +728,15 @@ export default function AdminPanel() {
                   </label>
                 </div>
                 <div style={{ marginTop: '12px' }}>
-                  <textarea placeholder="وصف قصير (عربي)" value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', fontFamily: FONT, minHeight: '60px' }} />
+                  <textarea placeholder="وصف قصير (عربي)" maxLength={2000} value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', fontFamily: FONT, minHeight: '60px' }} />
                 </div>
                 <div style={{ marginTop: '12px' }}>
-                  <textarea placeholder="وصف مفصل (عربي)" value={form.descriptionAr} onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', fontFamily: FONT, minHeight: '60px' }} />
+                  <textarea placeholder="وصف مفصل (عربي)" maxLength={4000} value={form.descriptionAr} onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #ddd', fontFamily: FONT, minHeight: '60px' }} />
                 </div>
                 <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <input type="file" accept="image/*" multiple onChange={handleUploadMultiple} disabled={uploading} />
                   {uploading && <span style={{ fontSize: '13px', color: '#666' }}>جاري الرفع...</span>}
-                  <input placeholder="رابط صورة رئيسية" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} style={{ ...inputStyle, flex: '1 1 200px' }} />
+                  <input placeholder="رابط صورة رئيسية" maxLength={2000} value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} style={{ ...inputStyle, flex: '1 1 200px' }} />
                 </div>
                 {form.images.length > 0 && (
                   <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -730,11 +750,11 @@ export default function AdminPanel() {
                   </div>
                 )}
                 <div style={{ marginTop: '12px' }}>
-                  <input placeholder="وسوم (comma separated)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
+                  <input placeholder="وسوم (comma separated)" maxLength={500} value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} style={{ ...inputStyle, width: '100%' }} />
                 </div>
                 <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <input placeholder="عنوان SEO" value={form.metaTitle} onChange={(e) => setForm({ ...form, metaTitle: e.target.value })} style={{ ...inputStyle, flex: '1 1 240px' }} />
-                  <input placeholder="وصف SEO" value={form.metaDescription} onChange={(e) => setForm({ ...form, metaDescription: e.target.value })} style={{ ...inputStyle, flex: '1 1 240px' }} />
+                  <input placeholder="عنوان SEO" maxLength={150} value={form.metaTitle} onChange={(e) => setForm({ ...form, metaTitle: e.target.value })} style={{ ...inputStyle, flex: '1 1 240px' }} />
+                  <input placeholder="وصف SEO" maxLength={300} value={form.metaDescription} onChange={(e) => setForm({ ...form, metaDescription: e.target.value })} style={{ ...inputStyle, flex: '1 1 240px' }} />
                 </div>
                 <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                   <button type="submit" disabled={busy} style={btnDark}>حفظ</button>
@@ -781,7 +801,7 @@ export default function AdminPanel() {
                               <input type="file" accept="image/*" onChange={handleInlineImage} disabled={uploading} style={{ display: 'block', marginTop: '4px', fontSize: '12px', maxWidth: '160px' }} />
                               {uploading && <span style={{ color: '#e0234e', fontSize: '11px' }}>جاري الرفع...</span>}
                             </label>
-                            <input placeholder="أو رابط صورة" value={inline.image} onChange={(e) => setInline({ ...inline, image: e.target.value })} style={{ width: '150px', fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="أو رابط صورة" maxLength={2000} value={inline.image} onChange={(e) => setInline({ ...inline, image: e.target.value })} style={{ width: '150px', fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
                           </div>
                         ) : (
                           <img
@@ -796,9 +816,9 @@ export default function AdminPanel() {
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         {ed ? (
                           <div style={{ display: 'flex', gap: '4px', flexDirection: 'column', minWidth: '180px' }}>
-                            <input placeholder="الاسم (عربي)" value={inline.nameAr} onChange={(e) => setInline({ ...inline, nameAr: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                            <input placeholder="الاسم (افتراضي)" value={inline.name} onChange={(e) => setInline({ ...inline, name: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                            <input placeholder="الاسم (إنجليزي)" value={inline.nameEn} onChange={(e) => setInline({ ...inline, nameEn: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="الاسم (عربي)" maxLength={200} value={inline.nameAr} onChange={(e) => setInline({ ...inline, nameAr: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="الاسم (افتراضي)" maxLength={200} value={inline.name} onChange={(e) => setInline({ ...inline, name: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="الاسم (إنجليزي)" maxLength={200} value={inline.nameEn} onChange={(e) => setInline({ ...inline, nameEn: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
                           </div>
                         ) : (
                           <div>{p.nameAr || p.name}</div>
@@ -825,7 +845,7 @@ export default function AdminPanel() {
                           <div style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}>
                             <input type="number" min={0} placeholder="السعر" value={inline.price} onChange={(e) => setInline({ ...inline, price: e.target.value })} style={{ width: '90px' }} />
                             <input type="number" min={0} placeholder="سعر الخصم" value={inline.salePrice} onChange={(e) => setInline({ ...inline, salePrice: e.target.value })} style={{ width: '90px' }} />
-                            <input placeholder="اللون" value={inline.color} onChange={(e) => setInline({ ...inline, color: e.target.value })} style={{ width: '90px' }} />
+                            <input placeholder="اللون" maxLength={50} value={inline.color} onChange={(e) => setInline({ ...inline, color: e.target.value })} style={{ width: '90px' }} />
                           </div>
                         ) : p.salePrice && p.salePrice !== p.price ? (
                           <span><s>{p.price}</s> {p.salePrice}</span>
