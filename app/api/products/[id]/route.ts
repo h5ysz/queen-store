@@ -3,21 +3,22 @@ import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { isAuthenticated } from '@/lib/auth'
 
-const ALLOWED_FIELDS = ['name', 'price', 'color', 'caption', 'image', 'category', 'stock', 'sortOrder', 'isActive'] as const
+const ALLOWED_FIELDS = [
+  'name', 'nameAr', 'nameEn', 'slug', 'price', 'salePrice', 'color', 'caption',
+  'description', 'descriptionAr', 'descriptionEn', 'image', 'images', 'category',
+  'categoryId', 'stock', 'sortOrder', 'isActive', 'outOfStock', 'tags',
+  'metaTitle', 'metaDescription',
+] as const
 
-const MAX_LENGTHS: Record<string, number> = { name:200,nameAr:200,nameEn:200,slug:200,salePrice:50,description:4000,descriptionAr:4000,descriptionEn:4000,images:2000,categoryId:100,tags:500,metaTitle:150,metaDescription:300,
-  name: 200,
-  price: 50,
-  color: 50,
-  caption: 2000,
-  image: 2000,
-  category: 100,
+const MAX_LENGTHS: Record<string, number> = {
+  name: 200, nameAr: 200, nameEn: 200, slug: 200, price: 50, salePrice: 50,
+  color: 50, caption: 2000, description: 4000, descriptionAr: 4000, descriptionEn: 4000,
+  image: 2000, category: 100, categoryId: 100, tags: 500, metaTitle: 150, metaDescription: 300,
 }
 
-type ProductData = Record<string, string | number | boolean>
-type ValidationResult = { data: ProductData } | { error: string }
+type ProductData = Record<string, string | number | boolean | string[] | null>
 
-function validateBody(body: unknown): ValidationResult {
+function validateBody(body: unknown): { data: ProductData } | { error: string } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     return { error: 'صيغة الطلب غير صحيحة' }
   }
@@ -31,46 +32,70 @@ function validateBody(body: unknown): ValidationResult {
   const data: ProductData = {}
   for (const key of keys) {
     const value = input[key]
-    if (key === 'isActive') {
-      if (typeof value !== 'boolean') return { error: 'قيمة حالة المنتج غير صحيحة' }
-      data.isActive = value
-    } else if (key === 'sortOrder') {
-      const num =
-        typeof value === 'number'
-          ? value
-          : typeof value === 'string' && value.trim() !== ''
-            ? Number(value)
-            : NaN
-      if (!Number.isInteger(num) || num < 0) return { error: 'ترتيب العرض غير صحيح' }
-      data.sortOrder = num
-    } else if (key === 'stock') {
-      const num =
-        typeof value === 'number'
-          ? value
-          : typeof value === 'string' && value.trim() !== ''
-            ? Number(value)
-            : NaN
-      if (!Number.isInteger(num) || num < 0) return { error: 'قيمة المخزون غير صحيحة' }
-      data.stock = num
-    } else if (key === 'category') {
-      if (typeof value !== 'string') return { error: 'قيمة التصنيف غير صحيحة' }
-      const trimmed = value.trim()
-      if (trimmed.length > MAX_LENGTHS.category) return { error: 'اسم التصنيف أطول من الحد المسموح' }
-      data.category = trimmed
-    } else if (key === 'name') {
+
+    if (key === 'isActive' || key === 'outOfStock') {
+      if (typeof value !== 'boolean') return { error: 'قيمة الحقل غير صحيحة' }
+      data[key] = value
+      continue
+    }
+    if (key === 'sortOrder' || key === 'stock') {
+      const num = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN
+      if (!Number.isInteger(num) || num < 0) return { error: 'قيمة الحقل غير صحيحة' }
+      data[key] = num
+      continue
+    }
+    if (key === 'images') {
+      if (!Array.isArray(value) || !value.every((x) => typeof x === 'string')) {
+        return { error: 'قيمة الصور غير صحيحة' }
+      }
+      data.images = value.slice(0, 12)
+      continue
+    }
+    if (key === 'name') {
       if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
       const trimmed = value.trim()
       if (trimmed === '') return { error: 'اسم المنتج مطلوب' }
       if (trimmed.length > MAX_LENGTHS.name) return { error: 'قيمة نصية أطول من الحد المسموح' }
       data.name = trimmed
-    } else {
-      if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
-      const max = MAX_LENGTHS[key] ?? 2000
-      if (value.length > max) return { error: 'قيمة نصية أطول من الحد المسموح' }
-      data[key] = value
+      continue
     }
+    if (key === 'categoryId' || key === 'slug') {
+      if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
+      const trimmed = value.trim()
+      data[key] = trimmed === '' ? null : trimmed
+      continue
+    }
+
+    if (typeof value !== 'string') return { error: 'قيمة نصية غير صحيحة' }
+    const max = MAX_LENGTHS[key] ?? 2000
+    if (value.length > max) return { error: 'قيمة نصية أطول من الحد المسموح' }
+    data[key] = key === 'price' || key === 'salePrice' || key === 'category' || key === 'color' || key === 'caption' ? value : value.trim()
   }
   return { data }
+}
+
+async function apply(data: ProductData, cid: string) {
+  if ('categoryId' in data && typeof data.categoryId === 'string') {
+    const cid2 = data.categoryId
+    if (cid2 === '') {
+      data.categoryId = null
+      data.category = ''
+    } else {
+      const cat = await db.category.findUnique({ where: { id: cid2 } })
+      if (!cat) return { error: 'التصنيف غير موجود' }
+      data.category = cat.name
+      data.categoryId = cat.id
+    }
+  }
+  if ('image' in data && typeof data.image === 'string' && data.image === '') {
+    data.image = Array.isArray(data.images) && data.images.length ? data.images[0] : ''
+  }
+
+  const product = await db.product.update({
+    where: { id: cid },
+    data: data as Prisma.ProductUpdateInput,
+  })
+  return { product }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -80,18 +105,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const body = await req.json()
     const result = validateBody(body)
     if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 })
-
     const name = result.data.name
     if (typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json({ error: 'اسم المنتج مطلوب' }, { status: 400 })
     }
     result.data.name = name.trim()
-
-    const product = await db.product.update({
-      where: { id: params.id },
-      data: result.data as Prisma.ProductUpdateInput,
-    })
-    return NextResponse.json(product)
+    const res = await apply(result.data, params.id)
+    if ('error' in res) return NextResponse.json({ error: res.error }, { status: 400 })
+    return NextResponse.json(res.product)
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -107,12 +128,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (Object.keys(result.data).length === 0) {
       return NextResponse.json({ error: 'لا توجد حقول للتحديث' }, { status: 400 })
     }
-
-    const product = await db.product.update({
-      where: { id: params.id },
-      data: result.data as Prisma.ProductUpdateInput,
-    })
-    return NextResponse.json(product)
+    const res = await apply(result.data, params.id)
+    if ('error' in res) return NextResponse.json({ error: res.error }, { status: 400 })
+    return NextResponse.json(res.product)
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

@@ -4,6 +4,14 @@ import { isAuthenticated } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
+const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+const toNonNegInt = (v: unknown) => {
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isInteger(n) && n >= 0 ? n : 0
+}
+const toImages = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.length <= 2000).slice(0, 12) : []
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const wantsInactive = searchParams.get('includeInactive') === 'true'
@@ -15,7 +23,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get('maxPrice') || undefined
   const sort = searchParams.get('sort') || undefined
   const skip = Number(searchParams.get('skip')) || 0
-  const take = Math.min(Number(searchParams.get('take')) || 50, 200)
+  const take = Math.min(Number(searchParams.get('take')) || 200, 500)
 
   const where: any = {}
   if (!includeInactive) where.isActive = true
@@ -26,47 +34,56 @@ export async function GET(req: NextRequest) {
       { nameEn: { contains: q, mode: 'insensitive' } },
       { caption: { contains: q, mode: 'insensitive' } },
       { description: { contains: q, mode: 'insensitive' } },
+      { tags: { contains: q, mode: 'insensitive' } },
     ]
   }
   if (categoryId) where.categoryId = categoryId
   else if (parentId) {
     const children = await db.category.findMany({ where: { parentId }, select: { id: true } })
-    const ids = children.map((c) => c.id)
-    ids.push(parentId)
-    where.categoryId = { in: ids }
+    where.categoryId = { in: [parentId, ...children.map((c) => c.id)] }
   }
 
-  let orderBy: any = { sortOrder: 'asc' as const }
-  if (sort === 'newest') orderBy = { createdAt: 'desc' as const }
-  if (sort === 'price_asc') orderBy = { price: 'asc' as const }
-  if (sort === 'price_desc') orderBy = { price: 'desc' as const }
-  if (sort === 'name') orderBy = { name: 'asc' as const }
+  let orderBy: any = [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
+  if (sort === 'newest') orderBy = { createdAt: 'desc' }
+  if (sort === 'price_asc') orderBy = { price: 'asc' }
+  if (sort === 'price_desc') orderBy = { price: 'desc' }
+  if (sort === 'name') orderBy = { name: 'asc' }
 
   const products = await db.product.findMany({
     where,
     orderBy,
     skip,
     take,
-    include: { categoryRelation: { select: { id: true, name: true, parentId: true } } },
+    include: { categoryRelation: { select: { id: true, name: true, nameAr: true, nameEn: true, parentId: true } } },
   })
   return NextResponse.json(products)
 }
+
 export async function POST(req: NextRequest) {
   const auth = await isAuthenticated()
-  if (!auth) return NextResponse.json({ error: '??? ???? ???????' }, { status: 401 })
+  if (!auth) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
     const body = await req.json()
-    const name = typeof body.name === 'string' ? body.name.trim() : ''
-    if (!name) return NextResponse.json({ error: '??? ?????? ?????' }, { status: 400 })
-    if (name.length > 200) return NextResponse.json({ error: '??? ?????? ???? ????' }, { status: 400 })
-    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '')
-    const toNonNegInt = (v: unknown) => { const n = typeof v === 'number' ? v : Number(v); return Number.isInteger(n) && n >= 0 ? n : 0 }
+    const name = str(body.name, 200)
+    if (!name) return NextResponse.json({ error: 'اسم المنتج مطلوب' }, { status: 400 })
+
+    const categoryId = str(body.categoryId, 100) || null
+    let categoryName = str(body.category, 100)
+    if (categoryId) {
+      const cat = await db.category.findUnique({ where: { id: categoryId } })
+      if (!cat) return NextResponse.json({ error: 'التصنيف غير موجود' }, { status: 400 })
+      categoryName = cat.name
+    }
+
+    const images = toImages(body.images)
+    const image = str(body.image, 2000) || images[0] || ''
+
     const product = await db.product.create({
       data: {
         name,
         nameAr: str(body.nameAr, 200),
         nameEn: str(body.nameEn, 200),
-        slug: str(body.slug, 200) || undefined,
+        slug: str(body.slug, 200) || null,
         price: str(body.price, 50),
         salePrice: str(body.salePrice, 50),
         color: str(body.color, 50),
@@ -74,10 +91,10 @@ export async function POST(req: NextRequest) {
         description: str(body.description, 4000),
         descriptionAr: str(body.descriptionAr, 4000),
         descriptionEn: str(body.descriptionEn, 4000),
-        image: str(body.image, 2000),
-        images: Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []),
-        category: str(body.category, 100).trim(),
-        categoryId: str(body.categoryId, 100) || undefined,
+        image,
+        images: images.length ? images : image ? [image] : [],
+        category: categoryName,
+        categoryId,
         stock: toNonNegInt(body.stock),
         sortOrder: toNonNegInt(body.sortOrder),
         isActive: body.isActive !== false,
@@ -88,7 +105,7 @@ export async function POST(req: NextRequest) {
       },
     })
     return NextResponse.json(product)
-  } catch (e) {
-    return NextResponse.json({ error: '??? ???' }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'حدث خطأ أثناء إنشاء المنتج' }, { status: 500 })
   }
 }
