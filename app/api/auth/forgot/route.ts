@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 import { emailMatchesAdmin } from '@/lib/admin'
-import { getRequestCounts, recordRequest, canSendToEmail, ipExceeded, createResetToken } from '@/lib/reset'
+import { getRequestCounts, recordRequest, canSendToEmail, ipExceeded, createResetToken, hashToken } from '@/lib/reset'
 import { sendPasswordResetEmail } from '@/lib/mailer'
 
 export const dynamic = 'force-dynamic'
@@ -50,8 +51,18 @@ export async function POST(req: NextRequest) {
     const base = (process.env.APP_URL || req.nextUrl.origin).replace(/\/$/, '')
     const link = `${base}/admin/reset?token=${token}`
     const result = await sendPasswordResetEmail(email, link)
-    if (!result.ok) {
+    const tokenHash = hashToken(token)
+    if (result.ok) {
+      await db.passwordReset.updateMany({
+        where: { tokenHash, usedAt: null },
+        data: { sendStatus: 'sent', sendError: '', sentAt: new Date() },
+      })
+    } else {
       console.error('[forgot] reset email failed:', result.provider || 'n/a', result.error)
+      await db.passwordReset.updateMany({
+        where: { tokenHash, usedAt: null },
+        data: { sendStatus: 'failed', sendError: (result.error || '').slice(0, 300), sentAt: null },
+      })
     }
   } catch (e) {
     console.error('[forgot] error:', e)

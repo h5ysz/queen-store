@@ -82,6 +82,9 @@ model PasswordReset {
   ip        String    @default("")
   expiresAt DateTime
   usedAt    DateTime?
+  sendStatus String   @default("")
+  sendError  String   @default("")
+  sentAt     DateTime?
   createdAt DateTime  @default(now())
 
   @@index([email, createdAt])
