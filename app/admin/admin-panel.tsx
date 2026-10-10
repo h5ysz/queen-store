@@ -146,7 +146,7 @@ export default function AdminPanel() {
   const [busy, setBusy] = useState(false)
   const [confirmDel, setConfirmDel] = useState<null | { kind: 'product' | 'category'; id: string; label: string; c?: Category }>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [inline, setInline] = useState({ price: '', salePrice: '', stock: 0, sortOrder: 0, outOfStock: false, isActive: true, image: '' })
+  const [inline, setInline] = useState({ name: '', nameAr: '', nameEn: '', color: '', categoryId: '', price: '', salePrice: '', stock: 0, sortOrder: 0, outOfStock: false, isActive: true, image: '' })
   const [viewImg, setViewImg] = useState<null | { list: string[]; name: string }>(null)
   const [viewImgIdx, setViewImgIdx] = useState(0)
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -298,7 +298,7 @@ export default function AdminPanel() {
 
   const startInlineEdit = (p: Product) => {
     setEditingId(p.id)
-    setInline({ price: p.price, salePrice: p.salePrice || '', stock: p.stock ?? 0, sortOrder: p.sortOrder ?? 0, outOfStock: !!p.outOfStock, isActive: p.isActive !== false, image: p.image || '' })
+    setInline({ name: p.name, nameAr: p.nameAr || '', nameEn: p.nameEn || '', color: p.color || '', categoryId: p.categoryId || '', price: p.price, salePrice: p.salePrice || '', stock: p.stock ?? 0, sortOrder: p.sortOrder ?? 0, outOfStock: !!p.outOfStock, isActive: p.isActive !== false, image: p.image || '' })
   }
 
   const handleInlineImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -336,6 +336,11 @@ export default function AdminPanel() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: inline.name,
+          nameAr: inline.nameAr,
+          nameEn: inline.nameEn,
+          color: inline.color,
+          categoryId: inline.categoryId,
           price: inline.price,
           salePrice: inline.salePrice,
           stock: inline.stock,
@@ -391,9 +396,18 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error('فشل نسخ المنتج')
-      setSuccess('تم نسخ المنتج — عدّل السعر/المخزون/الاسم من الصف')
+      const dupId = data.id
+      setSuccess('تم نسخ المنتج — غيّر الاسم وعدّل من الصف مباشرة')
       await reloadAll()
+      if (dupId) {
+        setInline({ name: body.name, nameAr: body.nameAr, nameEn: body.nameEn, color: body.color, categoryId: body.categoryId || '', price: body.price, salePrice: body.salePrice || '', stock: body.stock, sortOrder: body.sortOrder, outOfStock: body.outOfStock, isActive: body.isActive, image: body.image || '' })
+        setEditingId(dupId)
+        setTimeout(() => {
+          document.getElementById('prod-' + dupId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 300)
+      }
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -744,7 +758,7 @@ export default function AdminPanel() {
                   {products.map((p) => {
                   const ed = editingId === p.id
                   return (
-                    <tr key={p.id}>
+                    <tr key={p.id} id={`prod-${p.id}`}>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         {ed ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
@@ -773,15 +787,38 @@ export default function AdminPanel() {
                         )}
                       </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
-                        <div>{p.nameAr || p.name}</div>
+                        {ed ? (
+                          <div style={{ display: 'flex', gap: '4px', flexDirection: 'column', minWidth: '180px' }}>
+                            <input placeholder="الاسم (عربي)" value={inline.nameAr} onChange={(e) => setInline({ ...inline, nameAr: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="الاسم (افتراضي)" value={inline.name} onChange={(e) => setInline({ ...inline, name: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="الاسم (إنجليزي)" value={inline.nameEn} onChange={(e) => setInline({ ...inline, nameEn: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                          </div>
+                        ) : (
+                          <div>{p.nameAr || p.name}</div>
+                        )}
                         {p.salePrice && !ed && <div style={{ fontSize: '12px', color: '#e0234e' }}>خصم: {p.salePrice}</div>}
                       </td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{catName(catById(p.categoryId) || { id: '', name: p.category || '' })}</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
+                        {ed ? (
+                          <select value={inline.categoryId} onChange={(e) => setInline({ ...inline, categoryId: e.target.value })} style={{ fontSize: '13px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', maxWidth: '150px' }}>
+                            <option value="">بدون تصنيف</option>
+                            {mainCats.map((c) => (
+                              <optgroup key={c.id} label={catName(c)}>
+                                <option value={c.id}>{catName(c)}</option>
+                                {childCats.filter((cd) => cd.parentId === c.id).map((cd) => <option key={cd.id} value={cd.id}>↳ {catName(cd)}</option>)}
+                              </optgroup>
+                            ))}
+                          </select>
+                        ) : (
+                          catName(catById(p.categoryId) || { id: '', name: p.category || '' })
+                        )}
+                      </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         {ed ? (
                           <div style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}>
                             <input type="number" min={0} placeholder="السعر" value={inline.price} onChange={(e) => setInline({ ...inline, price: e.target.value })} style={{ width: '90px' }} />
                             <input type="number" min={0} placeholder="سعر الخصم" value={inline.salePrice} onChange={(e) => setInline({ ...inline, salePrice: e.target.value })} style={{ width: '90px' }} />
+                            <input placeholder="اللون" value={inline.color} onChange={(e) => setInline({ ...inline, color: e.target.value })} style={{ width: '90px' }} />
                           </div>
                         ) : p.salePrice && p.salePrice !== p.price ? (
                           <span><s>{p.price}</s> {p.salePrice}</span>
