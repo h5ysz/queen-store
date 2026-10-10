@@ -47,6 +47,7 @@ interface Category {
 }
 
 const emptyProduct = {
+  id: '',
   name: '',
   nameAr: '',
   nameEn: '',
@@ -254,12 +255,19 @@ export default function AdminPanel() {
     setError('')
     setSuccess('')
     try {
-      const payload = {
-        ...form,
-        images: form.images,
-        categoryId: form.categoryId || undefined,
-        category: form.category,
+      const PAYLOAD_KEYS = [
+        'id', 'name', 'nameAr', 'nameEn', 'slug', 'price', 'salePrice', 'color', 'caption',
+        'description', 'descriptionAr', 'descriptionEn', 'image', 'images', 'category',
+        'categoryId', 'stock', 'sortOrder', 'isActive', 'outOfStock', 'tags',
+        'metaTitle', 'metaDescription',
+      ] as const
+      const payload: Record<string, unknown> = {}
+      for (const key of PAYLOAD_KEYS) {
+        if (key === 'id' && editing) continue
+        payload[key] = (form as any)[key]
       }
+      payload.categoryId = form.categoryId || undefined
+      payload.images = form.images
       const res = editing
         ? await fetch(`/api/products/${editing.id}`, {
             method: 'PUT',
@@ -537,6 +545,9 @@ export default function AdminPanel() {
                   <input placeholder="اسم المنتج (افتراضي) *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} />
                   <input placeholder="اسم المنتج (إنجليزي)" value={form.nameEn} onChange={(e) => setForm({ ...form, nameEn: e.target.value })} style={inputStyle} />
                   <input placeholder="معرّف الرابط (slug)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} style={inputStyle} />
+                  {!editing && (
+                    <input placeholder="معرّف المنتج (اختياري: أحرف/أرقام/_- فقط)" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value.trim() })} style={inputStyle} />
+                  )}
                   <input placeholder="السعر *" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} style={inputStyle} />
                   <input placeholder="سعر الخصم (اختياري)" value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })} style={inputStyle} />
                   <input placeholder="اللون" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} style={inputStyle} />

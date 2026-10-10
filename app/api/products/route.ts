@@ -67,6 +67,17 @@ export async function POST(req: NextRequest) {
     const name = str(body.name, 200)
     if (!name) return NextResponse.json({ error: 'اسم المنتج مطلوب' }, { status: 400 })
 
+    const idData: { id?: string } = {}
+    const customId = str(body.id, 64)
+    if (customId) {
+      if (!/^[A-Za-z0-9_-]+$/.test(customId)) {
+        return NextResponse.json({ error: 'معرّف المنتج غير صالح (أحرف، أرقام، _ أو - فقط)' }, { status: 400 })
+      }
+      const exists = await db.product.findUnique({ where: { id: customId } })
+      if (exists) return NextResponse.json({ error: 'هذا المعرّف مستخدم بالفعل' }, { status: 400 })
+      idData.id = customId
+    }
+
     const categoryId = str(body.categoryId, 100) || null
     let categoryName = str(body.category, 100)
     if (categoryId) {
@@ -80,6 +91,7 @@ export async function POST(req: NextRequest) {
 
     const product = await db.product.create({
       data: {
+        ...idData,
         name,
         nameAr: str(body.nameAr, 200),
         nameEn: str(body.nameEn, 200),
