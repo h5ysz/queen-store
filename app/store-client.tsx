@@ -131,34 +131,6 @@ export default function StoreClient({
     toastTimer.current = setTimeout(() => setToast(''), 1800)
   }
 
-  const priceLabel = (p: StoreProduct) =>
-    p.salePrice && p.salePrice !== p.price ? `${p.salePrice} ${SHOP.currency}` : p.price ? `${p.price} ${SHOP.currency}` : ''
-
-  const captionText = (p: StoreProduct) =>
-    priceLabel(p) ? `${p.name} — ${priceLabel(p)}\n${p.caption}` : p.caption
-
-  const copyCaption = async (p: StoreProduct) => {
-    const txt = captionText(p)
-    try {
-      await navigator.clipboard.writeText(txt)
-      showToast('تم نسخ الكابشن ✅')
-    } catch {
-      window.prompt('انسخ الكابشن:', txt)
-    }
-  }
-
-  const downloadCaptions = () => {
-    const txt = filtered
-      .map((p) => `${p.name}${p.price ? '\n' + p.price + ' ' + SHOP.currency : ''}\n${p.caption}`)
-      .join('\n\n———\n\n')
-    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'كابشنات-تيك-توك.txt'
-    a.click()
-    showToast('تم تحميل الكابشنات ✅')
-  }
-
   const chipStyle = (selected: boolean): React.CSSProperties => ({
     border: selected ? '2px solid #111' : '1px solid #ddd',
     background: selected ? '#111' : '#fff',
@@ -205,7 +177,6 @@ export default function StoreClient({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button type="button" onClick={downloadCaptions}>📋 الكابشنات</button>
           <a className="admin-link" href="/admin" title="لوحة الإدارة">⚙️ لوحة الإدارة</a>
         </div>
       </header>
@@ -290,7 +261,6 @@ export default function StoreClient({
                 </div>
                 {p.category && <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{p.category}</div>}
                 <div className="btns">
-                  <button type="button" className="copy" onClick={() => copyCaption(p)}>📋 كابشن</button>
                   <a
                     className="wa"
                     href={wa(`السلام عليكم، أبي أطلب ${p.name}`)}
@@ -368,7 +338,6 @@ export default function StoreClient({
                 </div>
                 <p className="cap" style={{ color: '#333', whiteSpace: 'pre-wrap' }}>{active.description || active.caption}</p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
-                  <button type="button" className="copy" onClick={() => copyCaption(active)}>📋 نسخ الكابشن</button>
                   <a className="wa" href={wa(`السلام عليكم، أبي أطلب ${active.name}`)} target="_blank" rel="noopener noreferrer">
                     اطلب عبر واتساب
                   </a>
