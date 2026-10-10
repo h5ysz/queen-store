@@ -513,12 +513,18 @@ export default function AdminPanel() {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
           <h1 style={{ margin: 0, fontSize: '24px' }}>لوحة إدارة Queen Store</h1>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => setTab('products')} style={{ ...btnLight, background: tab === 'products' ? '#111' : '#fff', color: tab === 'products' ? '#fff' : '#333' }}>المنتجات</button>
-            <button onClick={() => setTab('categories')} style={{ ...btnLight, background: tab === 'categories' ? '#111' : '#fff', color: tab === 'categories' ? '#fff' : '#333' }}>التصنيفات</button>
+            <button onClick={() => setTab('products')} style={{ ...btnLight, background: tab === 'products' ? '#111' : '#fff', color: tab === 'products' ? '#fff' : '#333' }}>المنتجات ({products.length})</button>
+            <button onClick={() => setTab('categories')} style={{ ...btnLight, background: tab === 'categories' ? '#111' : '#fff', color: tab === 'categories' ? '#fff' : '#333' }}>التصنيفات ({categories.length})</button>
             <a href="/" style={{ ...btnLight, textDecoration: 'none', fontSize: '14px' }}>عرض المتجر</a>
             <button onClick={handleLogout} style={btnLight}>تسجيل الخروج</button>
           </div>
         </header>
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+          <span style={{ background: '#fff', border: '1px solid #eee', borderRadius: '10px', padding: '10px 18px', fontSize: '15px' }}>🛍️ المنتجات: <strong style={{ fontSize: '17px' }}>{products.length}</strong></span>
+          <span style={{ background: '#fff', border: '1px solid #eee', borderRadius: '10px', padding: '10px 18px', fontSize: '15px' }}>📁 التصنيفات: <strong style={{ fontSize: '17px' }}>{categories.length}</strong></span>
+          <span style={{ background: '#fff', border: '1px solid #eee', borderRadius: '10px', padding: '10px 18px', fontSize: '15px' }}>تصنيفات فرعية: <strong style={{ fontSize: '17px' }}>{childCats.length}</strong></span>
+        </div>
 
         {error && <div style={{ background: '#fee', color: '#d33', padding: '10px 12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
         {success && <div style={{ background: '#efe', color: '#2a7a2a', padding: '10px 12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{success}</div>}
@@ -620,9 +626,9 @@ export default function AdminPanel() {
                   <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} style={inputStyle}>
                     <option value="">بدون تصنيف</option>
                     {mainCats.map((c) => (
-                      <optgroup key={c.id} label={catName(c)}>
-                        <option value={c.id}>{catName(c)}</option>
-                        {childCats.filter((cd) => cd.parentId === c.id).map((cd) => <option key={cd.id} value={cd.id}>↳ {catName(cd)}</option>)}
+                      <optgroup key={c.id} label={`${catName(c)} (${products.filter((p) => p.categoryId === c.id).length})`}>
+                        <option value={c.id}>{catName(c)} ({products.filter((p) => p.categoryId === c.id).length})</option>
+                        {childCats.filter((cd) => cd.parentId === c.id).map((cd) => <option key={cd.id} value={cd.id}>↳ {catName(cd)} ({products.filter((p) => p.categoryId === cd.id).length})</option>)}
                       </optgroup>
                     ))}
                   </select>
