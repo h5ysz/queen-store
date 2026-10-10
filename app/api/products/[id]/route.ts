@@ -152,6 +152,17 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!auth) return NextResponse.json({ error: 'غير مصرح' }, { status: 401 })
   try {
     await db.product.delete({ where: { id: params.id } })
+    const remaining = await db.product.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, sortOrder: true },
+    })
+    let order = 1
+    for (const r of remaining) {
+      if (r.sortOrder !== order) {
+        await db.product.update({ where: { id: r.id }, data: { sortOrder: order } })
+      }
+      order++
+    }
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
