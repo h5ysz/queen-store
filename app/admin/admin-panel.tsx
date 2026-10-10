@@ -356,6 +356,51 @@ export default function AdminPanel() {
     }
   }
 
+  const duplicateProduct = async (p: Product) => {
+    setBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const nextSort = products.length ? Math.max(...products.map((x) => x.sortOrder ?? 0)) + 1 : 1
+      const body = {
+        name: p.name,
+        nameAr: p.nameAr || '',
+        nameEn: p.nameEn || '',
+        slug: '',
+        price: p.price,
+        salePrice: p.salePrice || '',
+        color: p.color || '',
+        caption: p.caption || '',
+        description: p.description || '',
+        descriptionAr: p.descriptionAr || '',
+        descriptionEn: p.descriptionEn || '',
+        image: p.image || '',
+        images: imageList(p),
+        category: p.category || '',
+        categoryId: p.categoryId || '',
+        stock: p.stock ?? 0,
+        sortOrder: nextSort,
+        isActive: p.isActive !== false,
+        outOfStock: !!p.outOfStock,
+        tags: p.tags || '',
+        metaTitle: p.metaTitle || '',
+        metaDescription: p.metaDescription || '',
+      }
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error('فشل نسخ المنتج')
+      setSuccess('تم نسخ المنتج — عدّل السعر/المخزون/الاسم من الصف')
+      await reloadAll()
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const toggleActive = async (p: Product) => {
     setBusy(true)
     setError('')
@@ -777,6 +822,7 @@ export default function AdminPanel() {
                         ) : (
                           <>
                             <button type="button" onClick={() => startInlineEdit(p)} style={btnLight}>تعديل</button>
+                            <button type="button" onClick={() => duplicateProduct(p)} disabled={busy} style={btnLight} title="إضافة نسخة جديدة من هذا المنتج بسرعة">نسخ</button>
                             <button type="button" onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
                             <button type="button" onClick={() => setConfirmDel({ kind: 'product', id: p.id, label: p.nameAr || p.name })} style={{ ...btnLight, color: '#d33' }}>حذف</button>
                           </>
