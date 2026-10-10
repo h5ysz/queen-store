@@ -390,9 +390,9 @@ export default function AdminPanel() {
     try {
       const nextSort = products.length ? Math.max(...products.map((x) => x.sortOrder ?? 0)) + 1 : 1
       const body = {
-        name: p.name,
-        nameAr: p.nameAr || '',
-        nameEn: p.nameEn || '',
+        name: p.name + ' (نسخة)',
+        nameAr: p.nameAr ? p.nameAr + ' (نسخة)' : '',
+        nameEn: p.nameEn ? p.nameEn + ' (copy)' : '',
         slug: '',
         price: p.price,
         salePrice: p.salePrice || '',
