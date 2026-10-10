@@ -146,7 +146,9 @@ export default function AdminPanel() {
   const [busy, setBusy] = useState(false)
   const [confirmDel, setConfirmDel] = useState<null | { kind: 'product' | 'category'; id: string; label: string; c?: Category }>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [inline, setInline] = useState({ price: '', salePrice: '', stock: 0, sortOrder: 0, outOfStock: false, isActive: true })
+  const [inline, setInline] = useState({ price: '', salePrice: '', stock: 0, sortOrder: 0, outOfStock: false, isActive: true, image: '' })
+  const [viewImg, setViewImg] = useState<null | { list: string[]; name: string }>(null)
+  const [viewImgIdx, setViewImgIdx] = useState(0)
   const formRef = useRef<HTMLFormElement | null>(null)
   const router = useRouter()
 
@@ -296,7 +298,33 @@ export default function AdminPanel() {
 
   const startInlineEdit = (p: Product) => {
     setEditingId(p.id)
-    setInline({ price: p.price, salePrice: p.salePrice || '', stock: p.stock ?? 0, sortOrder: p.sortOrder ?? 0, outOfStock: !!p.outOfStock, isActive: p.isActive !== false })
+    setInline({ price: p.price, salePrice: p.salePrice || '', stock: p.stock ?? 0, sortOrder: p.sortOrder ?? 0, outOfStock: !!p.outOfStock, isActive: p.isActive !== false, image: p.image || '' })
+  }
+
+  const handleInlineImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const compressed = await compressImage(file)
+      const fd = new FormData()
+      fd.append('file', new File([compressed], 'upload.jpg', { type: compressed.type || 'image/jpeg' }))
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.url) {
+        setInline((f) => ({ ...f, image: data.url }))
+        setSuccess('تم رفع الصورة الجديدة')
+      } else {
+        setError(data.error || 'فشل رفع الصورة')
+      }
+    } catch {
+      setError('فشل رفع الصورة')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   const saveInlineEdit = async (id: string) => {
@@ -314,6 +342,7 @@ export default function AdminPanel() {
           sortOrder: inline.sortOrder,
           outOfStock: inline.outOfStock,
           isActive: inline.isActive,
+          image: inline.image,
         }),
       })
       if (!res.ok) throw new Error('فشل حفظ التعديل')
@@ -456,6 +485,18 @@ export default function AdminPanel() {
   }
 
   const imgSrc = (image: string) => (image.startsWith('data:') || image.startsWith('http') ? image : '/' + image)
+
+  const imageList = (p: Product): string[] => {
+    const arr = Array.isArray(p.images) && p.images.length ? p.images.filter(Boolean) : p.image ? [p.image] : []
+    return arr
+  }
+
+  const openViewer = (p: Product) => {
+    const list = imageList(p)
+    if (!list.length) return
+    setViewImg({ list, name: p.nameAr || p.name })
+    setViewImgIdx(0)
+  }
 
   const confirmDeleteAction = () => {
     if (!confirmDel) return
@@ -654,7 +695,31 @@ export default function AdminPanel() {
                   return (
                     <tr key={p.id}>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
-                        <img src={imgSrc(p.image)} alt={p.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                        {ed ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+                            <img
+                              src={imgSrc(inline.image || p.image)}
+                              alt={p.name}
+                              onClick={() => openViewer(p)}
+                              style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', cursor: 'zoom-in' }}
+                              title="اضغط للتكبير"
+                            />
+                            <label style={{ fontSize: '11px', color: '#666' }}>
+                              تغيير الصورة:
+                              <input type="file" accept="image/*" onChange={handleInlineImage} disabled={uploading} style={{ display: 'block', marginTop: '4px', fontSize: '12px', maxWidth: '160px' }} />
+                              {uploading && <span style={{ color: '#e0234e', fontSize: '11px' }}>جاري الرفع...</span>}
+                            </label>
+                            <input placeholder="أو رابط صورة" value={inline.image} onChange={(e) => setInline({ ...inline, image: e.target.value })} style={{ width: '150px', fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                          </div>
+                        ) : (
+                          <img
+                            src={imgSrc(p.image)}
+                            alt={p.name}
+                            onClick={() => openViewer(p)}
+                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', cursor: 'zoom-in' }}
+                            title="اضغط للتكبير"
+                          />
+                        )}
                       </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         <div>{p.nameAr || p.name}</div>
@@ -738,6 +803,39 @@ export default function AdminPanel() {
               <button type="button" onClick={() => setConfirmDel(null)} style={btnLight}>إلغاء</button>
             </div>
           </div>
+        </div>
+      )}
+    {viewImg && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '20px' }}
+          onClick={() => setViewImg(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setViewImg(null)}
+            style={{ position: 'absolute', top: '16px', right: '20px', zIndex: 2, border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', width: '40px', height: '40px', borderRadius: '50%', fontSize: '18px', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+          <img
+            src={imgSrc(viewImg.list[viewImgIdx] || '')}
+            alt={viewImg.name}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '94vw', maxHeight: '82vh', objectFit: 'contain', borderRadius: '8px', background: '#111' }}
+          />
+          {viewImg.list.length > 1 && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
+              {viewImg.list.map((im, i) => (
+                <img
+                  key={i}
+                  src={imgSrc(im)}
+                  alt=""
+                  onClick={() => setViewImgIdx(i)}
+                  style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: i === viewImgIdx ? '3px solid #e0234e' : '2px solid #fff' }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
