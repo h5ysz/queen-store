@@ -145,6 +145,8 @@ export default function AdminPanel() {
   const [showCatForm, setShowCatForm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirmDel, setConfirmDel] = useState<null | { kind: 'product' | 'category'; id: string; label: string; c?: Category }>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [inline, setInline] = useState({ price: '', salePrice: '', stock: 0, sortOrder: 0, outOfStock: false, isActive: true })
   const formRef = useRef<HTMLFormElement | null>(null)
   const router = useRouter()
 
@@ -195,24 +197,6 @@ export default function AdminPanel() {
   const openAdd = () => {
     setEditing(null)
     setForm({ ...emptyProduct, sortOrder: products.length + 1 })
-    setShowForm(true)
-    setError('')
-    setSuccess('')
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
-  }
-
-  const openEdit = (p: Product) => {
-    setEditing(p)
-    setForm({
-      ...emptyProduct,
-      ...p,
-      images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [],
-      categoryId: p.categoryId || '',
-      stock: p.stock ?? 0,
-      sortOrder: p.sortOrder ?? 0,
-      isActive: p.isActive !== false,
-      outOfStock: !!p.outOfStock,
-    })
     setShowForm(true)
     setError('')
     setSuccess('')
@@ -302,6 +286,39 @@ export default function AdminPanel() {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('فشل حذف المنتج')
       setSuccess('تم حذف المنتج')
+      await reloadAll()
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const startInlineEdit = (p: Product) => {
+    setEditingId(p.id)
+    setInline({ price: p.price, salePrice: p.salePrice || '', stock: p.stock ?? 0, sortOrder: p.sortOrder ?? 0, outOfStock: !!p.outOfStock, isActive: p.isActive !== false })
+  }
+
+  const saveInlineEdit = async (id: string) => {
+    setBusy(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price: inline.price,
+          salePrice: inline.salePrice,
+          stock: inline.stock,
+          sortOrder: inline.sortOrder,
+          outOfStock: inline.outOfStock,
+          isActive: inline.isActive,
+        }),
+      })
+      if (!res.ok) throw new Error('فشل حفظ التعديل')
+      setEditingId(null)
+      setSuccess('تم حفظ التعديل')
       await reloadAll()
     } catch (e: any) {
       setError(e.message)
@@ -632,31 +649,71 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((p) => (
+                  {products.map((p) => {
+                  const ed = editingId === p.id
+                  return (
                     <tr key={p.id}>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         <img src={imgSrc(p.image)} alt={p.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
                       </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
                         <div>{p.nameAr || p.name}</div>
-                        {p.salePrice && <div style={{ fontSize: '12px', color: '#e0234e' }}>خصم: {p.salePrice}</div>}
+                        {p.salePrice && !ed && <div style={{ fontSize: '12px', color: '#e0234e' }}>خصم: {p.salePrice}</div>}
                       </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{catName(catById(p.categoryId) || { id: '', name: p.category || '' })}</td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
-                        {p.salePrice && p.salePrice !== p.price ? <span><s>{p.price}</s> {p.salePrice}</span> : p.price}
+                        {ed ? (
+                          <div style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}>
+                            <input type="number" min={0} placeholder="السعر" value={inline.price} onChange={(e) => setInline({ ...inline, price: e.target.value })} style={{ width: '90px' }} />
+                            <input type="number" min={0} placeholder="سعر الخصم" value={inline.salePrice} onChange={(e) => setInline({ ...inline, salePrice: e.target.value })} style={{ width: '90px' }} />
+                          </div>
+                        ) : p.salePrice && p.salePrice !== p.price ? (
+                          <span><s>{p.price}</s> {p.salePrice}</span>
+                        ) : (
+                          p.price
+                        )}
                       </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
-                        {p.outOfStock ? 'نفد' : p.stock}
+                        {ed ? (
+                          <input type="number" min={0} value={inline.stock} onChange={(e) => setInline({ ...inline, stock: parseInt(e.target.value) || 0 })} style={{ width: '80px' }} />
+                        ) : p.outOfStock ? (
+                          'نفد'
+                        ) : (
+                          p.stock
+                        )}
                       </td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{p.isActive ? 'نشط' : 'مخفي'}</td>
-                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>{p.sortOrder}</td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
+                        {ed ? (
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+                            <span><input type="checkbox" checked={inline.isActive} onChange={(e) => setInline({ ...inline, isActive: e.target.checked })} /> نشط</span>
+                            <span><input type="checkbox" checked={inline.outOfStock} onChange={(e) => setInline({ ...inline, outOfStock: e.target.checked })} /> نفد المخزون</span>
+                          </label>
+                        ) : p.isActive ? (
+                          'نشط'
+                        ) : (
+                          'مخفي'
+                        )}
+                      </td>
+                      <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5' }}>
+                        {ed ? <input type="number" min={0} value={inline.sortOrder} onChange={(e) => setInline({ ...inline, sortOrder: parseInt(e.target.value) || 0 })} style={{ width: '70px' }} /> : p.sortOrder}
+                      </td>
                       <td style={{ padding: '10px', borderBottom: '1px solid #f5f5f5', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => openEdit(p)} style={btnLight}>تعديل</button>
-                        <button type="button" onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
-                        <button type="button" onClick={() => setConfirmDel({ kind: 'product', id: p.id, label: p.nameAr || p.name })} style={{ ...btnLight, color: '#d33' }}>حذف</button>
+                        {ed ? (
+                          <>
+                            <button type="button" onClick={() => saveInlineEdit(p.id)} disabled={busy} style={btnDark}>حفظ</button>
+                            <button type="button" onClick={() => setEditingId(null)} disabled={busy} style={btnLight}>إلغاء</button>
+                          </>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => startInlineEdit(p)} style={btnLight}>تعديل</button>
+                            <button type="button" onClick={() => toggleActive(p)} style={btnLight}>{p.isActive ? 'إخفاء' : 'إظهار'}</button>
+                            <button type="button" onClick={() => setConfirmDel({ kind: 'product', id: p.id, label: p.nameAr || p.name })} style={{ ...btnLight, color: '#d33' }}>حذف</button>
+                          </>
+                        )}
                       </td>
                     </tr>
-                  ))}
+                  )
+                })}
                   {!loading && products.length === 0 && (
                     <tr><td colSpan={8} style={{ padding: '20px', textAlign: 'center', color: '#888' }}>لا توجد منتجات. اضغط «إضافة منتج جديد».</td></tr>
                   )}
