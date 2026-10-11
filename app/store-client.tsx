@@ -32,7 +32,7 @@ export type StoreCategory = {
 
 const SHOP = {
   name: 'Queen',
-  phone: '505897949',
+  phone: '966505897949',
   currency: 'ر.س',
 }
 
