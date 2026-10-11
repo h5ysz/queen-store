@@ -1,8 +1,14 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Queen Store',
-  description: 'متجر Queen',
+  title: 'Queen Store — شنط وحقائب',
+  description: 'متجر Queen للشنط والحقائب. اطلب عبر واتساب ودليفري سريع.',
+  openGraph: {
+    title: 'Queen Store — شنط وحقائب',
+    description: 'متجر Queen للشنط والحقائب. اطلب عبر واتساب ودليفري سريع.',
+    type: 'website',
+    locale: 'ar_SA',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
