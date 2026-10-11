@@ -154,12 +154,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     await db.product.delete({ where: { id: params.id } })
     const remaining = await db.product.findMany({
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-      select: { id: true, sortOrder: true },
+      select: { id: true, sortOrder: true, name: true },
     })
     let order = 1
     for (const r of remaining) {
-      if (r.sortOrder !== order) {
-        await db.product.update({ where: { id: r.id }, data: { sortOrder: order } })
+      const data: { sortOrder?: number; name?: string } = {}
+      if (r.sortOrder !== order) data.sortOrder = order
+      const trimmed = (r.name || '').trim()
+      if (/^شنطة\s*\d+$/.test(trimmed) && trimmed !== `شنطة ${order}`) {
+        data.name = `شنطة ${order}`
+      }
+      if (Object.keys(data).length > 0) {
+        await db.product.update({ where: { id: r.id }, data })
       }
       order++
     }
