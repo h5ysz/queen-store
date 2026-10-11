@@ -143,8 +143,14 @@ export default function StoreClient({
 
   const activeImages = (p: StoreProduct) => {
     const imgs = p.images.filter(Boolean)
-    return imgs.length ? imgs : p.image ? [p.image] : []
+    const main = (p.image || '').trim()
+    if (!imgs.length) return main ? [main] : imgs
+    if (main && !imgs.includes(main)) return [main, ...imgs]
+    return imgs
   }
+
+  const hasPrice = (p: StoreProduct) => !!((p.salePrice && p.salePrice.trim()) || (p.price && p.price.trim()))
+  const priceText = (p: StoreProduct) => (p.salePrice && p.salePrice.trim()) || p.price || ''
 
   const openDetail = (p: StoreProduct) => {
     setActive(p)
@@ -251,11 +257,17 @@ export default function StoreClient({
               <div className="b-info">
                 <div className="b-name">{p.nameAr || p.name}</div>
                 <div className="price-row">
-                  {p.salePrice && p.salePrice !== p.price && (
+                  {hasPrice(p) && p.salePrice && p.salePrice !== p.price && (
                     <span className="old-price" style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px', marginLeft: '6px' }}>{p.price}</span>
                   )}
-                  <span className="price">{p.salePrice || p.price}</span>
-                  <span className="currency">{SHOP.currency}</span>
+                  {hasPrice(p) ? (
+                    <>
+                      <span className="price">{priceText(p)}</span>
+                      <span className="currency">{SHOP.currency}</span>
+                    </>
+                  ) : (
+                    <span className="price">السعر عند الطلب</span>
+                  )}
                 </div>
                 {p.category && <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{p.category}</div>}
                 <div className="btns">
@@ -327,14 +339,20 @@ export default function StoreClient({
               </div>
               <div style={{ textAlign: 'center', marginTop: '8px' }}>
                 <h3 style={{ margin: '0 0 4px' }}>{active.nameAr || active.name}</h3>
-                <div>
-                  {active.salePrice && active.salePrice !== active.price && (
-                    <span style={{ textDecoration: 'line-through', color: '#999', marginLeft: '8px', fontSize: '15px' }}>{active.price}</span>
-                  )}
-                  <span style={{ color: '#e0234e', fontWeight: 700, fontSize: '20px' }}>{active.salePrice || active.price}</span>
-                  <span style={{ color: '#555', marginRight: '4px' }}>{SHOP.currency}</span>
-                </div>
-                <p className="cap" style={{ color: '#333', whiteSpace: 'pre-wrap' }}>{active.description || active.caption}</p>
+                {hasPrice(active) ? (
+                  <div>
+                    {active.salePrice && active.salePrice !== active.price && (
+                      <span style={{ textDecoration: 'line-through', color: '#999', marginLeft: '8px', fontSize: '15px' }}>{active.price}</span>
+                    )}
+                    <span style={{ color: '#e0234e', fontWeight: 700, fontSize: '20px' }}>{priceText(active)}</span>
+                    <span style={{ color: '#555', marginRight: '4px' }}>{SHOP.currency}</span>
+                  </div>
+                ) : (
+                  <div style={{ color: '#d4af37', fontWeight: 700, fontSize: '17px' }}>السعر عند الطلب</div>
+                )}
+                {((active.description || '').trim() || (active.caption || '').trim()) && (
+                  <p className="cap" style={{ color: '#333', whiteSpace: 'pre-wrap' }}>{active.description || active.caption}</p>
+                )}
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
                   <a className="wa" href={wa(`السلام عليكم، أبي أطلب ${active.name}`)} target="_blank" rel="noopener noreferrer">
                     اطلب عبر واتساب

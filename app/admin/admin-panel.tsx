@@ -424,7 +424,20 @@ export default function AdminPanel() {
       setSuccess('تم نسخ المنتج — غيّر الاسم وعدّل من الصف مباشرة')
       await reloadAll()
       if (dupId) {
-        setInline({ name: body.name, nameAr: body.nameAr, nameEn: body.nameEn, color: body.color, categoryId: body.categoryId || '', price: body.price, salePrice: body.salePrice || '', stock: body.stock, sortOrder: body.sortOrder, outOfStock: body.outOfStock, isActive: body.isActive, image: body.image || '' })
+        setInline({
+          name: data2.name || body.name,
+          nameAr: data2.nameAr || body.nameAr || '',
+          nameEn: data2.nameEn || body.nameEn || '',
+          color: data2.color || body.color || '',
+          categoryId: data2.categoryId || body.categoryId || '',
+          price: data2.price ?? body.price,
+          salePrice: data2.salePrice || body.salePrice || '',
+          stock: data2.stock ?? body.stock,
+          sortOrder: data2.sortOrder ?? body.sortOrder,
+          outOfStock: !!data2.outOfStock,
+          isActive: data2.isActive !== false,
+          image: data2.image || body.image || '',
+        })
         setEditingId(dupId)
         setTimeout(() => {
           document.getElementById('prod-' + dupId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -573,8 +586,10 @@ export default function AdminPanel() {
   const imgSrc = (image: string) => (image.startsWith('data:') || image.startsWith('http') ? image : '/' + image)
 
   const imageList = (p: Product): string[] => {
-    const arr = Array.isArray(p.images) && p.images.length ? p.images.filter(Boolean) : p.image ? [p.image] : []
-    return arr
+    const arr = Array.isArray(p.images) ? p.images.filter(Boolean) : []
+    const main = (p.image || '').trim()
+    if (arr.length) return main && !arr.includes(main) ? [main, ...arr] : arr
+    return main ? [main] : []
   }
 
   const openViewer = (p: Product) => {

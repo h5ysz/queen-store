@@ -30,7 +30,7 @@ export default async function HomePage() {
     categoryId: p.categoryId || '',
     categoryParentId: '',
     stock: p.stock ?? 0,
-    outOfStock: p.outOfStock || (p.stock !== undefined && p.stock <= 0),
+    outOfStock: p.outOfStock === true,
     badge: i + 1,
   }))
 
