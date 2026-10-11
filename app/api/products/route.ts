@@ -10,7 +10,7 @@ const toNonNegInt = (v: unknown) => {
   return Number.isInteger(n) && n >= 0 ? n : 0
 }
 const toImages = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.length <= 2000).slice(0, 12) : []
+  Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.length <= 5000000).slice(0, 12) : []
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     const images = toImages(body.images)
-    const image = str(body.image, 2000) || images[0] || ''
+    const image = str(body.image, 5000000) || images[0] || ''
 
     const product = await db.product.create({
       data: {

@@ -13,7 +13,7 @@ const ALLOWED_FIELDS = [
 const MAX_LENGTHS: Record<string, number> = {
   name: 200, nameAr: 200, nameEn: 200, slug: 200, price: 50, salePrice: 50,
   color: 50, caption: 2000, description: 4000, descriptionAr: 4000, descriptionEn: 4000,
-  image: 2000, category: 100, categoryId: 100, tags: 500, metaTitle: 150, metaDescription: 300,
+  image: 5000000, category: 100, categoryId: 100, tags: 500, metaTitle: 150, metaDescription: 300,
 }
 
 const FIELD_LABELS: Record<string, string> = {

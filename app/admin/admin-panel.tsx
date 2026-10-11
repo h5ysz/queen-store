@@ -336,7 +336,7 @@ export default function AdminPanel() {
       ['color', 'اللون', 50],
       ['price', 'السعر', 50],
       ['salePrice', 'سعر الخصم', 50],
-      ['image', 'رابط الصورة', 2000],
+      ['image', 'رابط الصورة', 5000000],
     ]
     for (const [key, label, max] of limits) {
       const v = inline[key]
@@ -736,7 +736,7 @@ export default function AdminPanel() {
                 <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <input type="file" accept="image/*" multiple onChange={handleUploadMultiple} disabled={uploading} />
                   {uploading && <span style={{ fontSize: '13px', color: '#666' }}>جاري الرفع...</span>}
-                  <input placeholder="رابط صورة رئيسية" maxLength={2000} value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} style={{ ...inputStyle, flex: '1 1 200px' }} />
+                  <input placeholder="رابط صورة رئيسية" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} style={{ ...inputStyle, flex: '1 1 200px' }} />
                 </div>
                 {form.images.length > 0 && (
                   <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -801,7 +801,7 @@ export default function AdminPanel() {
                               <input type="file" accept="image/*" onChange={handleInlineImage} disabled={uploading} style={{ display: 'block', marginTop: '4px', fontSize: '12px', maxWidth: '160px' }} />
                               {uploading && <span style={{ color: '#e0234e', fontSize: '11px' }}>جاري الرفع...</span>}
                             </label>
-                            <input placeholder="أو رابط صورة" maxLength={2000} value={inline.image} onChange={(e) => setInline({ ...inline, image: e.target.value })} style={{ width: '150px', fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                            <input placeholder="أو رابط صورة" value={inline.image} onChange={(e) => setInline({ ...inline, image: e.target.value })} style={{ width: '150px', fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd' }} />
                           </div>
                         ) : (
                           <img
