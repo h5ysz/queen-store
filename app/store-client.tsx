@@ -42,7 +42,7 @@ function wa(message: string) {
 
 function srcOf(image: string) {
   if (!image) return ''
-  return image.startsWith('data:') || image.startsWith('http') ? image : '/' + image
+  return image.startsWith('data:') || image.startsWith('http') || image.startsWith('/') ? image : '/' + image
 }
 
 function catName(c: StoreCategory) {

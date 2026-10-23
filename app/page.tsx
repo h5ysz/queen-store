@@ -15,24 +15,41 @@ export default async function HomePage() {
     }),
   ])
 
-  const items = products.map((p, i) => ({
-    id: p.id,
-    name: p.name,
-    nameAr: p.nameAr || '',
-    nameEn: p.nameEn || '',
-    price: p.price,
-    salePrice: p.salePrice || '',
-    caption: p.caption,
-    description: p.description || p.caption,
-    image: p.image,
-    images: Array.isArray(p.images) ? (p.images as unknown[]).filter((x) => typeof x === 'string') : [],
-    category: p.category,
-    categoryId: p.categoryId || '',
-    categoryParentId: '',
-    stock: p.stock ?? 0,
-    outOfStock: p.outOfStock === true,
-    badge: i + 1,
-  }))
+  const items = products.map((p, i) => {
+    const version = p.updatedAt instanceof Date ? p.updatedAt.getTime() : 0
+    const toSrc = (raw: string, idx?: number) => {
+      if (!raw || !raw.startsWith('data:')) return raw
+      const qs = new URLSearchParams()
+      if (idx !== undefined) qs.set('i', String(idx))
+      if (version) qs.set('v', String(version))
+      const q = qs.toString()
+      return `/api/img/${p.id}${q ? `?${q}` : ''}`
+    }
+    const rawImages = Array.isArray(p.images)
+      ? (p.images as unknown[]).filter((x): x is string => typeof x === 'string')
+      : []
+    const images = rawImages.map((raw, idx) => toSrc(raw, idx))
+    let image = toSrc(p.image)
+    if (p.image && rawImages[0] === p.image && images.length) image = images[0]
+    return {
+      id: p.id,
+      name: p.name,
+      nameAr: p.nameAr || '',
+      nameEn: p.nameEn || '',
+      price: p.price,
+      salePrice: p.salePrice || '',
+      caption: p.caption,
+      description: p.description || p.caption,
+      image,
+      images,
+      category: p.category,
+      categoryId: p.categoryId || '',
+      categoryParentId: '',
+      stock: p.stock ?? 0,
+      outOfStock: p.outOfStock === true,
+      badge: i + 1,
+    }
+  })
 
   const cats = categories.map((c) => ({
     id: c.id,
