@@ -29,6 +29,24 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 يرسل رسالة تجريبية إلى البريد وواتساب ويعيد نتيجة كل قناة.
 
+## الملخص الأسبوعي
+
+كل يوم أحد 04:00 UTC (07:00 بتوقيت السعودية) يصل بريد تلخيصي يحتوي:
+
+- عدد المنتجات والتصنيفات والمفعّلة ونفد المخزون.
+- عدد الصور المضمّنة.
+- تاريخ آخر نسخة احتياطية وحجمها.
+- تنبيه إذا كانت آخر نسخة أقدم من 36 ساعة.
+
+المسار: `/api/backup/weekly` (محمي بـ `CRON_SECRET`)، والجدولة في `vercel.json`.
+
+للتجربة اليدوية:
+
+```
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://queen-store-preview.vercel.app/api/backup/weekly"
+```
+
 ## الاستعادة عند الحاجة
 
 1. نزّل الملف `backups/db-backup.json` من الفرع `db-backup`.
