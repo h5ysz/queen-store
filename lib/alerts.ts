@@ -3,8 +3,7 @@ import { sendMail, type SendResult } from './mailer'
 export type WhatsAppResult = {
   ok: boolean
   provider?: string
-  status?: number
-  detail?: string
+  sent?: Array<{ phone: string; ok: boolean; detail?: string; error?: string }>
   error?: string
 }
 
@@ -27,31 +26,54 @@ function riyadhTime(date: Date): string {
   }
 }
 
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  return digits.length <= 4 ? phone : '***' + digits.slice(-4)
+}
+
 export async function sendWhatsApp(text: string): Promise<WhatsAppResult> {
-  const phone = process.env.WHATSAPP_PHONE
-  const apikey = process.env.WHATSAPP_APIKEY
-  if (!phone || !apikey) {
+  const phones = (process.env.WHATSAPP_PHONE || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const keys = (process.env.WHATSAPP_APIKEY || '').split(',').map((s) => s.trim())
+
+  if (!phones.length || !keys.length || !keys[0]) {
     return { ok: false, provider: 'callmebot', error: 'whatsapp-not-configured' }
   }
-  try {
-    const url =
-      'https://api.callmebot.com/whatsapp.php?phone=' +
-      encodeURIComponent(phone) +
-      '&text=' +
-      encodeURIComponent(text) +
-      '&apikey=' +
-      encodeURIComponent(apikey)
-    const res = await fetch(url, { cache: 'no-store' })
-    const body = (await res.text()).slice(0, 300)
-    const ok = res.ok && !/^\s*error/i.test(body)
-    return {
-      ok,
-      provider: 'callmebot',
-      status: res.status,
-      detail: body.replace(/\s+/g, ' ').trim().slice(0, 160),
-    }
-  } catch (e) {
-    return { ok: false, provider: 'callmebot', error: String(e).slice(0, 200) }
+
+  const sent = await Promise.all(
+    phones.map(async (phone, i) => {
+      const apikey = keys[i] || ''
+      if (!apikey) {
+        return { phone: maskPhone(phone), ok: false, error: 'missing-apikey-for-this-phone' }
+      }
+      try {
+        const url =
+          'https://api.callmebot.com/whatsapp.php?phone=' +
+          encodeURIComponent(phone) +
+          '&text=' +
+          encodeURIComponent(text) +
+          '&apikey=' +
+          encodeURIComponent(apikey)
+        const res = await fetch(url, { cache: 'no-store' })
+        const body = (await res.text()).slice(0, 300)
+        const ok = res.ok && !/^\s*error/i.test(body)
+        return {
+          phone: maskPhone(phone),
+          ok,
+          detail: body.replace(/\s+/g, ' ').trim().slice(0, 160),
+        }
+      } catch (e) {
+        return { phone: maskPhone(phone), ok: false, error: String(e).slice(0, 200) }
+      }
+    }),
+  )
+
+  return {
+    ok: sent.length > 0 && sent.every((r) => r.ok),
+    provider: 'callmebot',
+    sent,
   }
 }
 
