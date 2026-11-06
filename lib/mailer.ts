@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer'
 
-type SendResult = { ok: boolean; provider?: string; error?: string }
+export type SendResult = { ok: boolean; provider?: string; error?: string }
+
+export type MailPayload = { to: string; subject: string; html: string; text: string }
 
 function renderResetEmail(link: string): string {
   return `<!doctype html>
@@ -69,11 +71,8 @@ function renderResetText(link: string): string {
   ].join('\n')
 }
 
-export async function sendPasswordResetEmail(to: string, link: string): Promise<SendResult> {
+export async function sendMail({ to, subject, html, text }: MailPayload): Promise<SendResult> {
   const from = process.env.MAIL_FROM || 'Queen Store <onboarding@resend.dev>'
-  const subject = 'إعادة تعيين كلمة مرور لوحة Queen Store'
-  const html = renderResetEmail(link)
-  const text = renderResetText(link)
 
   if (process.env.RESEND_API_KEY) {
     try {
@@ -114,4 +113,13 @@ export async function sendPasswordResetEmail(to: string, link: string): Promise<
   }
 
   return { ok: false, error: 'email-not-configured' }
+}
+
+export async function sendPasswordResetEmail(to: string, link: string): Promise<SendResult> {
+  return sendMail({
+    to,
+    subject: 'إعادة تعيين كلمة مرور لوحة Queen Store',
+    html: renderResetEmail(link),
+    text: renderResetText(link),
+  })
 }

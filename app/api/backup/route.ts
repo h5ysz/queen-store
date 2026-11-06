@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { sendBackupAlert } from '@/lib/alerts'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -41,8 +42,19 @@ export async function GET(req: NextRequest) {
   if (!secret || auth !== 'Bearer ' + secret) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
+  // Test notifications end-to-end without touching the database.
+  // GET /api/backup?notify=test  (requires CRON_SECRET)
+  if (req.nextUrl.searchParams.get('notify') === 'test') {
+    const alert = await sendBackupAlert('رسالة تجريبية', { test: true })
+    return NextResponse.json({ ok: true, test: true, ...alert })
+  }
+
   if (!process.env.GH_BACKUP_TOKEN) {
-    return NextResponse.json({ error: 'GH_BACKUP_TOKEN is not configured' }, { status: 500 })
+    const alert = await sendBackupAlert('GH_BACKUP_TOKEN غير مضبوط في إعدادات Vercel')
+    return NextResponse.json(
+      { error: 'GH_BACKUP_TOKEN is not configured', alert },
+      { status: 500 },
+    )
   }
 
   try {
@@ -125,6 +137,12 @@ export async function GET(req: NextRequest) {
     })
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    return NextResponse.json({ error: message }, { status: 500 })
+    let alert: unknown = null
+    try {
+      alert = await sendBackupAlert(message)
+    } catch (alertError) {
+      alert = { ok: false, error: String(alertError).slice(0, 300) }
+    }
+    return NextResponse.json({ error: message, alert }, { status: 500 })
   }
 }
